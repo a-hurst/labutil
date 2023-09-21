@@ -41,6 +41,8 @@ def repo():
 @click.argument('url')
 def repo_add(url):
     repo_dir = os.path.join(config_dir, "repos")
+    if not os.path.exists(repo_dir):
+        os.mkdir(repo_dir)
     tmp_path = os.path.join(repo_dir, "_tmp")
     # Remove tmp repo if it already exists
     if os.path.exists(tmp_path):
