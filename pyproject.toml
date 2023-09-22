@@ -15,6 +15,7 @@ dependencies = [
     "PyYAML",
     "platformdirs",
     "pipenv",
+    "pywin32; platform_system=='Windows'",
 ]
 dynamic = ["version"]
 

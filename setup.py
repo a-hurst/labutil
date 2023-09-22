@@ -8,7 +8,8 @@ setup(
         'Click',
         'platformdirs',
         'PyYAML',
-        'pipenv'
+        'pipenv',
+        'pywin32; platform_system=="Windows"',
     ],
     entry_points={
         'console_scripts': [
