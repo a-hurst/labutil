@@ -5,10 +5,8 @@ import click
 from .utils import run_cmd, err
 from .repos import load_study, load_script, load_repos, load_repo_config
 from .config import create_config, read_config, config_dir
-from .install import install_task, create_shortcuts
+from .install import install_task, update_task, create_shortcuts
 
-# TODO: labutil update, for pulling latest source + refreshing the pipenv
-#       for a given task
 
 
 @click.group()
@@ -98,11 +96,13 @@ def repo_update():
 
 
 @labutil.command()
+@click.option("-U", "--update", is_flag=True, default=False)
 @click.argument("taskname")
-def install(taskname):
+def install(taskname, update):
     # Load labconf for runtime info
     conf = read_config()
     taskinfo = load_study(taskname)
+    taskdir = os.path.join(conf["experiment_dir"], taskname)
 
     # Make sure git installed before trying to install task
     if not shutil.which("git"):
@@ -111,7 +111,12 @@ def install(taskname):
     # Create Experiments folder if it doesn't already exist
     if not os.path.exists(conf["experiment_dir"]):
         os.mkdir(conf["experiment_dir"])
-    install_task(conf["experiment_dir"], taskname, taskinfo.url)
+    if update and os.path.exists(taskdir):
+        done_msg = "{0} updated successfully!"
+        update_task(conf["experiment_dir"], taskname)
+    else:
+        done_msg = "Installation of {0} completed successfully!"
+        install_task(conf["experiment_dir"], taskname, taskinfo.url)
 
     # Create shortcuts for the task
     if len(taskinfo.shortcuts):
@@ -126,7 +131,7 @@ def install(taskname):
             shortcut_dir, taskdir, taskname, taskinfo.shortcuts
         )
 
-    print("\n=== Installation of {0} completed successfully! ===\n".format(taskname))
+    print(("\n=== " + done_msg + " ===\n").format(taskname))
 
 
 @labutil.command(context_settings={"ignore_unknown_options": True})
