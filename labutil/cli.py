@@ -185,3 +185,18 @@ def script(name, wait, args, taskdir):
     if wait:
         while True:
             time.sleep(1)
+
+
+@labutil.command()
+def update():
+    resp = click.confirm(
+        "This will update labutil to the latest Github release. Continue?"
+    )
+    if not resp:
+        return
+    # Update labutil to latest git release
+    repo = "https://github.com/a-hurst/labutil.git"
+    print("")
+    success = run_cmd(['pip', 'install', '-U', 'git+{0}'.format(repo)])
+    if not success:
+        err("Unable to update labutil.")
