@@ -9,10 +9,10 @@ from .shortcuts import create_shortcut
 def install_task(exp_dir, taskname, url):
     taskdir = os.path.join(exp_dir, taskname)
     if os.path.exists(taskdir):
-        msg = " * '{0}' already exists in the experiments folder, skipping..."
+        msg = " * {0} already exists in the experiments folder, skipping...\n"
         print(msg.format(taskname))
         return
-    print("\n=== Installing experiment code for {0} ===\n".format(taskname))
+    #echo("\n=== Installing experiment code for {0} ===\n".format(taskname), 'bright_green')
     os.chdir(exp_dir)
     success = run_cmd(['git', 'clone', url])
     if not success:
@@ -32,7 +32,6 @@ def install_task(exp_dir, taskname, url):
 
 def update_task(exp_dir, taskname):
     taskdir = os.path.join(exp_dir, taskname)
-    print("\n=== Updating code for {0} ===\n".format(taskname))
     os.chdir(taskdir)
     # First, check for local changes
     changes = []

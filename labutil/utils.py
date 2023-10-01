@@ -7,7 +7,7 @@ def err(msg):
     click.echo(click.style(e, fg='red'))
     sys.exit(1)
 
-def echo(msg, color=None):
+def echo(msg, color='bright_green'):
     click.echo(click.style(msg, fg=color))
 
 def run_cmd(cmd):

@@ -2,7 +2,7 @@ import os
 import time
 import shutil
 import click
-from .utils import run_cmd, err
+from .utils import run_cmd, err, echo
 from .repos import load_study, load_script, load_repos, load_repo_config
 from .config import create_config, read_config, config_dir
 from .install import install_task, update_task, create_shortcuts
@@ -59,7 +59,7 @@ def repo_add(url):
         err("Repository with the name '{0}' already exists.".format(conf['name']))
     os.rename(tmp_path, repo_path)
     msg = "\n=== Repository '{0}' installed successfully ===\n"
-    print(msg.format(conf['name']))
+    echo(msg.format(conf['name']))
 
 @repo.command(name="remove")
 @click.argument('name')
@@ -112,11 +112,13 @@ def install(taskname, update):
     if not os.path.exists(conf["experiment_dir"]):
         os.mkdir(conf["experiment_dir"])
     if update and os.path.exists(taskdir):
-        done_msg = "{0} updated successfully!"
+        echo("\n=== Updating code for {0} ===\n".format(taskname))
         update_task(conf["experiment_dir"], taskname)
+        done_msg = "{0} updated successfully!"
     else:
-        done_msg = "Installation of {0} completed successfully!"
+        echo("\n=== Installing experiment code for {0} ===\n".format(taskname))
         install_task(conf["experiment_dir"], taskname, taskinfo.url)
+        done_msg = "Installation of {0} completed successfully!"
 
     # Create shortcuts for the task
     if len(taskinfo.shortcuts):
@@ -131,7 +133,7 @@ def install(taskname, update):
             shortcut_dir, taskdir, taskname, taskinfo.shortcuts
         )
 
-    print(("\n=== " + done_msg + " ===\n").format(taskname))
+    echo(("\n=== " + done_msg + " ===\n").format(taskname))
 
 
 @labutil.command(context_settings={"ignore_unknown_options": True})
@@ -154,8 +156,8 @@ def run(name, wait, args):
         os.chdir(taskdir)
         run_cmd(cmd)
     else:
-        e = "Study '{0}' does not exist in any current repository."
-        print(e.format(name))
+        echo("\nError: '{0}' is not currently installed.".format(name), 'red')
+        print("To install it, please run 'labutil install {0}'\n".format(name))
 
     # Keep terminal window open at the end
     if wait:
