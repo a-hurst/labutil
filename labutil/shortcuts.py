@@ -16,15 +16,17 @@ X-KDE-SubstituteUID=false
 
 def create_shortcut_linux(shortcut_dir, name, taskdir, taskname, info):
     if info["script"]:
-        cmd = 'labutil script -w {0} "{1}" --taskdir {2}'
+        cmd = 'bash -i labutil script -w {0} "{1}" --taskdir {2}'
         cmd = cmd.format(info['script'], info['args'], taskname)
     else:
-        cmd = 'labutil run -w {0} "{1}"'
+        cmd = 'bash -i labutil run -w {0} "{1}"'
         cmd = cmd.format(taskname, info['args'])
     icon = info['xdg_icon'] if info['xdg_icon'] else "application-other"
-    shortcut = xdg_template.format(cmd, taskdir, taskname, icon)
+    shortcut = xdg_template.format(cmd, taskdir, name, icon)
     # Write shortcut to file
     outpath = os.path.join(shortcut_dir, name)
+    if not os.getenv("XDG_CURRENT_DESKTOP", "") == "KDE":
+        outpath += ".desktop"  # Needed for Linux Mint, at least
     if os.path.exists(outpath):
         os.remove(outpath)
     print("   - {0}".format(outpath))
