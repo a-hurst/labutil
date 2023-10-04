@@ -39,6 +39,8 @@ def repo():
 @click.argument('url')
 def repo_add(url):
     repo_dir = os.path.join(config_dir, "repos")
+    if not os.path.exists(config_dir):
+        os.mkdir(config_dir)
     if not os.path.exists(repo_dir):
         os.mkdir(repo_dir)
     tmp_path = os.path.join(repo_dir, "_tmp")

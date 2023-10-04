@@ -12,7 +12,6 @@ def install_task(exp_dir, taskname, url):
         msg = " * {0} already exists in the experiments folder, skipping...\n"
         print(msg.format(taskname))
         return
-    #echo("\n=== Installing experiment code for {0} ===\n".format(taskname), 'bright_green')
     os.chdir(exp_dir)
     success = run_cmd(['git', 'clone', url])
     if not success:
