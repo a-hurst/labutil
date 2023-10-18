@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='labutil',
-    version='0.1.2',
+    version='0.1.3',
     packages=['labutil'],
     install_requires=[
         'Click',

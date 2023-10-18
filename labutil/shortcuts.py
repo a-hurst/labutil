@@ -1,6 +1,7 @@
 import os
 import sys
 import shutil
+from utils import run_cmd
 
 xdg_template = """
 [Desktop Entry]
@@ -32,6 +33,8 @@ def create_shortcut_linux(shortcut_dir, name, taskdir, taskname, info):
     print("   - {0}".format(outpath))
     with open(outpath, "w") as f:
         f.write(shortcut)
+    # Mark the shortcut as executable
+    run_cmd(['chmod', 'u+x', outpath])
 
 def create_shortcut_windows(shortcut_dir, name, taskdir, taskname, info):
     from win32com.client import Dispatch
