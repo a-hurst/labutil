@@ -1,7 +1,7 @@
 import os
 import sys
 import shutil
-from utils import run_cmd
+from .utils import run_cmd
 
 xdg_template = """
 [Desktop Entry]
