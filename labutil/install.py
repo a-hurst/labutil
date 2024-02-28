@@ -13,7 +13,7 @@ def install_task(exp_dir, taskname, url):
         print(msg.format(taskname))
         return
     os.chdir(exp_dir)
-    success = run_cmd(['git', 'clone', url])
+    success = run_cmd(['git', 'clone', url, taskname])
     if not success:
         err("Errors encountered installing the task.")
     # Initialize the pipenv for the task, if one exists
