@@ -36,9 +36,14 @@ class Study(object):
 
 
 def load_repo_config(path):
+    # Read in repo YAML
     config_file = os.path.join(path, "repo.yml")
     with open(config_file, "r") as f:
         repo_conf = yaml.safe_load(f.read())
+    # Ensure required sections are always present
+    for section in ['studies', 'scripts']:
+        if section not in repo_conf.keys():
+            repo_conf[section] = {}
     return repo_conf
 
 def load_repos():

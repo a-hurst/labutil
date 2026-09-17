@@ -97,6 +97,23 @@ def repo_update():
     print("")
 
 
+@labutil.command(name="list")
+def labutil_list():
+    repos = load_repos()
+    for name, info in repos.items():
+        echo("\n=== {} Repository ===\n".format(info['name']))
+        if len(info['studies']):
+            print("Tasks:")
+            for study in info['studies'].keys():
+                print(" - {}".format(study))
+            print("")
+        if len(info['scripts']):
+            print("Scripts:")
+            for script in info['scripts'].keys():
+                print(" - {}".format(script))
+            print("")
+
+
 @labutil.command()
 @click.option("-U", "--update", is_flag=True, default=False)
 @click.argument("taskname")
