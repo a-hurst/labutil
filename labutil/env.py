@@ -55,22 +55,6 @@ def parse_pipfile(path):
     return contents
 
 
-def _parse_package(package, version):
-    # Packages without pinned versions
-    if version == '"*"':
-        return package
-    # Non-PyPI packages installed from URLs
-    elif version[:5] == "{file":
-        url = version.split(" = ")[-1].strip('"}')
-        return "{} @ {}".format(package, url)
-    # Packages installed from git repositories
-    elif version[:4] == "{git":
-        fields = version[1:-1].split(", ")
-        raise RuntimeError("need to finish implementing this!")
-    # Packages with version restrictions
-    return package + version.strip('"')
-
-
 def convert_pipfile(taskname, taskdir):
     path = os.path.join(taskdir, "Pipfile")
     info = parse_pipfile(path)
@@ -80,23 +64,35 @@ def convert_pipfile(taskname, taskdir):
         if 'python_version' in info['requires'].keys():
             min_python = info['requires']['python_version'].strip('"')
     # Gather names of required packages
+    old_klibs = False
     packages = []
+    git_repos = []
     for package, version in info['packages'].items():
-        packages.append(_parse_package(package, version))
+        # Packages without pinned versions
+        if version == '"*"':
+            packages.append(package)
+        # Non-PyPI packages installed from URLs
+        elif version[:5] == "{file":
+            url = version.split(" = ")[-1].strip('"}')
+            packages.append("{} @ {}".format(package, url))
+            if package == "klibs":
+                if Version(url.split("/")[-2]) < Version("0.7.8b1"):
+                    old_klibs = True
+        # Packages installed from git repositories
+        elif version[:4] == "{git":
+            packages.append(package)
+            git_repos.append(package + " = " + version.replace("ref =", "rev ="))
+            if package == "klibs":
+                old_klibs = True
+        # Packages with version restrictions
+        else:
+            packages.append(package + version.strip('"'))
     # Gather names of dev packages
     dev_packages = []
     for package, version in info['dev-packages'].items():
-        dev_packages.append(_parse_package(package, version))
+        s = package if version == '"*"' else package + version.strip('"')
+        dev_packages.append(s)
     # If using older klibs, install old setuptools and set max Python version
-    old_klibs = False
-    for p in packages:
-        if p[:5] == "klibs":
-            url = p.split(" @ ")[-1]
-            if "git+" in url:
-                old_klibs = True # Err on side of caution
-            elif Version(url.split("/")[-2]) < Version("0.7.8b1"):
-                old_klibs = True
-            break
     if old_klibs:
         if "setuptools==79.0.1" not in packages:
             packages.append("setuptools==79.0.1")
@@ -106,5 +102,9 @@ def convert_pipfile(taskname, taskdir):
     pkg_str = ",\n    ".join(['"{}"'.format(p) for p in packages])
     dev_str = ",\n    ".join(['"{}"'.format(p) for p in dev_packages])
     contents = PYPROJECT_TEMPLATE.format(taskname, min_python, pkg_str, dev_str)
+    if len(git_repos):
+        contents += "\n[tool.uv.sources]\n"
+        contents += "\n".join(git_repos)
+        contents += "\n"
     with open(outfile, "w", encoding='utf-8') as out:
         out.write(contents)
