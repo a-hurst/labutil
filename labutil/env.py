@@ -19,6 +19,9 @@ dependencies = [
 dev = [
     {3}
 ]
+
+[tool.uv]
+preview-features = ["centralized-project-envs"]
 """
 
 
