@@ -3,6 +3,7 @@ import time
 import shutil
 import click
 from .utils import run_cmd, err, echo
+from .env import pipenv_active
 from .repos import load_study, load_script, load_repos, load_repo_config
 from .config import create_config, read_config, config_dir
 from .install import install_task, update_task, create_shortcuts
@@ -168,8 +169,10 @@ def run(name, wait, args):
     if os.path.exists(taskdir):
         if taskinfo.run_cmd:
             cmd = taskinfo.run_cmd.split(" ")
-        else:
+        elif pipenv_active(taskdir):
             cmd = ["pipenv", "run", "klibs", "run", conf["screen_size"]]
+        else:
+            cmd = ['uv', 'run', '--no-sync', 'klibs', 'run', conf["screen_size"]]
         if len(args):
             cmd += args.split(" ")
         os.chdir(taskdir)
