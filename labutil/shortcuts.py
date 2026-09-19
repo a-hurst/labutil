@@ -36,6 +36,26 @@ def create_shortcut_linux(shortcut_dir, name, taskdir, taskname, info):
     # Mark the shortcut as executable
     run_cmd(['chmod', 'u+x', outpath])
 
+def create_shortcut_macos(shortcut_dir, name, taskdir, taskname, info):
+    if info["script"]:
+        cmd = 'bash -i labutil script {0} "{1}" --taskdir {2}'
+        cmd = cmd.format(info['script'], info['args'], taskname)
+    else:
+        cmd = 'bash -i labutil run {0} "{1}"'
+        cmd = cmd.format(taskname, info['args'])
+    # Write shortcut to file
+    outpath = os.path.join(shortcut_dir, name + '.command')
+    if os.path.exists(outpath):
+        os.remove(outpath)
+    print("   - {0}".format(outpath))
+    with open(outpath, "w") as f:
+        f.write(cmd + "\n")
+    # Mark the shortcut as executable
+    run_cmd(['chmod', 'u+x', outpath])
+    # If SetFile available, hide file extension
+    if shutil.which('SetFile'):
+        run_cmd(['SetFile', '-a', 'E', outpath])
+
 def create_shortcut_windows(shortcut_dir, name, taskdir, taskname, info):
     from win32com.client import Dispatch
     outpath = os.path.join(shortcut_dir, "{0}.lnk".format(name))
@@ -63,6 +83,8 @@ def create_shortcut(shortcut_dir, name, taskdir, taskname, info):
         create_shortcut_linux(shortcut_dir, name, taskdir, taskname, info)
     elif sys.platform == "win32":
         create_shortcut_windows(shortcut_dir, name, taskdir, taskname, info)
+    elif sys.platform == "darwin":
+        create_shortcut_macos(shortcut_dir, name, taskdir, taskname, info)
     else:
         msg = " - Shortcuts not yet implemented for platform '{0}'"
         print(msg.format(sys.platform))
