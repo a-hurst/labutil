@@ -1,13 +1,14 @@
 import os
 import shutil
 import yaml
+import click
 from .utils import err
 from .config import config_dir
 
 
 class Study(object):
 
-    def __init__(self, name, info):
+    def __init__(self, name, repo, info):
         # Make sure required fields are all there
         fields = list(info.keys())
         if not "url" in fields:
@@ -16,6 +17,7 @@ class Study(object):
         
         # Initialize fields
         self.name = name
+        self.repo = repo
         self.url = info["url"]
         self.run_cmd = info['run_cmd'] if 'run_cmd' in fields else None
         self.shortcut_dir = info['shortcut_dir'] if 'shortcut_dir' in fields else None
@@ -65,32 +67,63 @@ def load_study(name):
     repos = load_repos()
     for repo, config in repos.items():
         if name in config['studies'].keys():
-            study = Study(name, config['studies'][name])
+            study = Study(name, repo, config['studies'][name])
             break
     if not study:
         err("No task matching the name '{0}' in any current repository.".format(name))
     return study
 
-def load_script(name):
-    script = None
-    repos = load_repos()
+def find_script(name, repos):
+    matches = []
     for repo, config in repos.items():
         if name in config['scripts'].keys():
-            tmp = config['scripts'][name]
-            # Ensure required fields exist
-            for field in ['script', 'language']:
-                if not field in tmp.keys():
-                    e = "Required field '{0}' missing for script '{1}'."
-                    err(e.format(field, name))
-            # Ensure script file exists in repo
-            script_dir = os.path.join(config_dir, 'repos', repo, 'scripts')
-            script_path = os.path.join(script_dir, tmp['script'])
-            if not os.path.exists(script_path):
-                e = "Script '{0}' does not exist within the {1} repository."
-                err(e.format(tmp['script'], repo))
-            script = tmp.copy()
-            script['path'] = script_path
-            break
-    if not script:
-        err("No script with the name '{0}' in any current repository.".format(name))
+            matches.append(repo)
+    # If multiple matches, prompt which one to use
+    repo = None
+    if len(matches) > 1:
+        s = "\nScript with the name '{}' found in multiple repositories:\n"
+        print(s.format(name))
+        options = range(1, len(matches) + 1)
+        for i in options:
+            print(" {}) {}".format(i, matches[i-1]))
+        print("")
+        resp = click.prompt(
+            "Please choose which one to run", type=click.Choice(options)
+        )
+        print("")
+        repo = matches[int(resp) - 1]
+    elif len(matches) == 1:
+        repo = matches[0]
+    else:
+        e = "No script with the name '{0}' in any current repository."
+        err(e.format(name))
+    return repo
+
+def load_script(name, repo=None):
+    script = None
+    repos = load_repos()
+    # Use repo if specified, otherwise try to find repo for script
+    if repo:
+        if not repo in repos.keys():
+            err("No repository with the name '{}' exists!".format(repo))
+        if not name in repos[repo]['scripts'].keys():
+            e = "No script with the name '{}' in the {} repository."
+            err(e.format(name. repo))
+        info = repos[repo]['scripts'][name]
+    else:
+        repo = find_script(name, repos)
+        info = repos[repo]['scripts'][name]
+    # Ensure required fields exist
+    for field in ['script', 'language']:
+        if not field in info.keys():
+            e = "Required field '{0}' missing for script '{1}'."
+            err(e.format(field, name))
+    # Ensure script file exists in repo
+    script_dir = os.path.join(config_dir, 'repos', repo, 'scripts')
+    script_path = os.path.join(script_dir, info['script'])
+    if not os.path.exists(script_path):
+        e = "Script '{0}' does not exist within the {1} repository."
+        err(e.format(info['script'], repo))
+    script = info.copy()
+    script['path'] = script_path
     return script

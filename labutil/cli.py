@@ -187,10 +187,11 @@ def run(name, wait, args):
 @labutil.command()
 @click.option("-w", "--wait", is_flag=True, default=False)
 @click.option("--taskdir", default="")
+@click.option("--repo", default="")
 @click.argument("name")
 @click.argument("args", default="")
-def script(name, wait, args, taskdir):
-    info = load_script(name)
+def script(name, wait, args, taskdir, repo):
+    info = load_script(name, repo)
     # Build the command to run
     cmd = [info['path']]
     if len(args):
