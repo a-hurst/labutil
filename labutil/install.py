@@ -77,9 +77,9 @@ def update_task(exp_dir, taskname):
         print("")
 
 
-def create_shortcuts(shortcut_dir, taskdir, taskname, shortcuts):
+def create_shortcuts(shortcut_dir, taskdir, taskname, repo, shortcuts):
     if os.path.exists(shortcut_dir):
         shutil.rmtree(shortcut_dir)
     os.mkdir(shortcut_dir)
     for name, info in shortcuts.items():
-        create_shortcut(shortcut_dir, name, taskdir, taskname, info)
+        create_shortcut(shortcut_dir, name, taskdir, taskname, repo, info)

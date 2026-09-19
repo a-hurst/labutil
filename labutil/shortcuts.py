@@ -15,10 +15,10 @@ StartupNotify=true
 X-KDE-SubstituteUID=false
 """
 
-def create_shortcut_linux(shortcut_dir, name, taskdir, taskname, info):
+def create_shortcut_linux(shortcut_dir, name, taskdir, taskname, repo, info):
     if info["script"]:
-        cmd = 'bash -i labutil script -w {0} "{1}" --taskdir {2}'
-        cmd = cmd.format(info['script'], info['args'], taskname)
+        cmd = 'bash -i labutil script -w {0} "{1}" --taskdir {2} --repo {3}'
+        cmd = cmd.format(info['script'], info['args'], taskname, repo)
     else:
         cmd = 'bash -i labutil run -w {0} "{1}"'
         cmd = cmd.format(taskname, info['args'])
@@ -36,10 +36,10 @@ def create_shortcut_linux(shortcut_dir, name, taskdir, taskname, info):
     # Mark the shortcut as executable
     run_cmd(['chmod', 'u+x', outpath])
 
-def create_shortcut_macos(shortcut_dir, name, taskdir, taskname, info):
+def create_shortcut_macos(shortcut_dir, name, taskdir, taskname, repo, info):
     if info["script"]:
-        cmd = 'bash -i labutil script {0} "{1}" --taskdir {2}'
-        cmd = cmd.format(info['script'], info['args'], taskname)
+        cmd = 'bash -i labutil script {0} "{1}" --taskdir {2} --repo {3}'
+        cmd = cmd.format(info['script'], info['args'], taskname, repo)
     else:
         cmd = 'bash -i labutil run {0} "{1}"'
         cmd = cmd.format(taskname, info['args'])
@@ -56,13 +56,13 @@ def create_shortcut_macos(shortcut_dir, name, taskdir, taskname, info):
     if shutil.which('SetFile'):
         run_cmd(['SetFile', '-a', 'E', outpath])
 
-def create_shortcut_windows(shortcut_dir, name, taskdir, taskname, info):
+def create_shortcut_windows(shortcut_dir, name, taskdir, taskname, repo, info):
     from win32com.client import Dispatch
     outpath = os.path.join(shortcut_dir, "{0}.lnk".format(name))
     # Generate command for shortcut
     if info["script"]:
-        cmd = 'labutil script {0} "{1}" --taskdir {2}'
-        cmd = cmd.format(info['script'], info['args'], taskname)
+        cmd = 'labutil script {0} "{1}" --taskdir {2} --repo {3}'
+        cmd = cmd.format(info['script'], info['args'], taskname, repo)
     else:
         cmd = 'labutil run {0} "{1}"'
         cmd = cmd.format(taskname, info['args'])
@@ -78,13 +78,13 @@ def create_shortcut_windows(shortcut_dir, name, taskdir, taskname, info):
     print("   - {0}".format(outpath))
     lnk.save()
 
-def create_shortcut(shortcut_dir, name, taskdir, taskname, info):
+def create_shortcut(shortcut_dir, name, taskdir, taskname, repo, info):
     if sys.platform == "linux":
-        create_shortcut_linux(shortcut_dir, name, taskdir, taskname, info)
+        create_shortcut_linux(shortcut_dir, name, taskdir, taskname, repo, info)
     elif sys.platform == "win32":
-        create_shortcut_windows(shortcut_dir, name, taskdir, taskname, info)
+        create_shortcut_windows(shortcut_dir, name, taskdir, taskname, repo, info)
     elif sys.platform == "darwin":
-        create_shortcut_macos(shortcut_dir, name, taskdir, taskname, info)
+        create_shortcut_macos(shortcut_dir, name, taskdir, taskname, repo, info)
     else:
         msg = " - Shortcuts not yet implemented for platform '{0}'"
         print(msg.format(sys.platform))

@@ -149,7 +149,7 @@ def install(taskname, update):
         if taskinfo.shortcut_dir:
             shortcut_dir = os.path.join(shortcut_dir, taskinfo.shortcut_dir)
         create_shortcuts(
-            shortcut_dir, taskdir, taskname, taskinfo.shortcuts
+            shortcut_dir, taskdir, taskname, taskinfo.repo, taskinfo.shortcuts
         )
 
     echo(("\n=== " + done_msg + " ===\n").format(taskname))
