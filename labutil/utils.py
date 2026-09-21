@@ -1,3 +1,4 @@
+import os
 import sys
 import subprocess as sub
 import click
@@ -10,8 +11,12 @@ def err(msg):
 def echo(msg, color='bright_green'):
     click.echo(click.style(msg, fg=color))
 
-def run_cmd(cmd):
-    p = sub.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr)
+def run_cmd(cmd, env_flags=None):
+    env = None
+    if env_flags:
+        env = os.environ
+        env.update(env_flags)
+    p = sub.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr, env=env)
     p.communicate()
     return p.returncode == 0
 

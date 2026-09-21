@@ -176,7 +176,8 @@ def run(name, wait, args):
         if len(args):
             cmd += args.split(" ")
         os.chdir(taskdir)
-        run_cmd(cmd)
+        env_flags = {'PYTHONUTF8': '1', 'PYTHONWARNINGS': 'ignore::SyntaxWarning'}
+        run_cmd(cmd, env_flags)
     else:
         echo("\nError: '{0}' is not currently installed.".format(name), 'red')
         print("To install it, please run 'labutil install {0}'\n".format(name))
@@ -196,17 +197,19 @@ def run(name, wait, args):
 def script(name, wait, args, taskdir, repo):
     info = load_script(name, repo)
     # Build the command to run
+    env_flags = None
     cmd = [info['path']]
     if len(args):
         cmd += args.split(" ")
     if info['language'] == 'python':
         cmd = ['python'] + cmd
+        env_flags = {'PYTHONUTF8': '1', 'PYTHONWARNINGS': 'ignore::SyntaxWarning'}
     # Actually run the script
     if len(taskdir):
         conf = read_config()
         path = os.path.join(conf["experiment_dir"], taskdir)
         os.chdir(path)
-    run_cmd(cmd)
+    run_cmd(cmd, env_flags)
     if wait:
         while True:
             time.sleep(1)
