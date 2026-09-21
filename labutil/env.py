@@ -63,6 +63,7 @@ def convert_pipfile(taskname, taskdir):
     info = parse_pipfile(path)
     # Get minimum Python version (default to Python 3.11 if not set)
     min_python = "3.11"
+    max_python = "<3.15"
     if 'requires' in info.keys():
         if 'python_version' in info['requires'].keys():
             min_python = info['requires']['python_version'].strip('"')
@@ -99,12 +100,13 @@ def convert_pipfile(taskname, taskdir):
     if old_klibs:
         if "setuptools==79.0.1" not in packages:
             packages.append("setuptools==79.0.1")
-        min_python = min_python + ",<3.12"
+        max_python = "<3.12"
     # Generate and save pyproject.toml
     outfile = os.path.join(taskdir, "pyproject.toml")
+    python_ver = "{},{}".format(min_python, max_python)
     pkg_str = ",\n    ".join(['"{}"'.format(p) for p in packages])
     dev_str = ",\n    ".join(['"{}"'.format(p) for p in dev_packages])
-    contents = PYPROJECT_TEMPLATE.format(taskname, min_python, pkg_str, dev_str)
+    contents = PYPROJECT_TEMPLATE.format(taskname, python_ver, pkg_str, dev_str)
     if len(git_repos):
         contents += "\n[tool.uv.sources]\n"
         contents += "\n".join(git_repos)
