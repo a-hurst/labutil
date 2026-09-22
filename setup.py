@@ -8,7 +8,8 @@ setup(
         'Click',
         'platformdirs',
         'PyYAML',
-        'pipenv',
+        'packaging',
+        'uv',
         'pywin32; platform_system=="Windows"',
     ],
     entry_points={

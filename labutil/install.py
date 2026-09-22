@@ -3,6 +3,7 @@ import sys
 import shutil
 
 from .utils import err, echo, run_cmd, cmd_output
+from .env import pipenv_active, convert_pipfile
 from .shortcuts import create_shortcut
 
 
@@ -16,15 +17,18 @@ def install_task(exp_dir, taskname, url):
     success = run_cmd(['git', 'clone', url, taskname])
     if not success:
         err("Errors encountered installing the task.")
-    # Initialize the pipenv for the task, if one exists
+    # Initialize the virtual environment for the task, if one exists
     if os.path.exists(os.path.join(taskdir, 'Pipfile')):
+        convert_pipfile(taskname, taskdir)
+        if pipenv_active(taskdir):
+            print("\nRemoving legacy Pipenv environment...")
+            os.chdir(taskdir)
+            run_cmd(['pipenv', 'remove'])
+    if os.path.exists(os.path.join(taskdir, 'pyproject.toml')):
         print("\n=== Initializing the task's virtual environment ===\n")
         os.chdir(taskdir)
-        tracked_lockfile = cmd_output(['git', 'ls-files', 'Pipfile.lock'])
-        if tracked_lockfile:
-            success = run_cmd(["pipenv", "install", "--deploy"])
-        else:
-            success = run_cmd(["pipenv", "install"])
+        success = run_cmd(['uv', 'sync', '--managed-python'])
+        print("")
         if not success:
             err("Unable to create the task's virtual environment.")
 
@@ -62,8 +66,15 @@ def update_task(exp_dir, taskname):
     success = run_cmd(['git', 'pull'])
     if not success:
         err("Errors encountered updating the task code.")
-    # Update the Pipenv for the task, if one exists
-    if os.path.exists('Pipfile'):
+    # Update the virtual environment for the task, if one exists
+    if os.path.exists('pyproject.toml'):
+        print("\n=== Updating the task's virtual environment ===\n")
+        success = run_cmd(['uv', 'sync'])
+        if not success:
+            err("Error encountered updating the virtual environment.")
+        print("")
+    # [Compat]: for existing projects, remove once possible
+    elif os.path.exists('Pipfile'):
         print("\n=== Updating the task's virtual environment ===\n")
         tracked_lockfile = cmd_output(['git', 'ls-files', 'Pipfile.lock'])
         if tracked_lockfile:

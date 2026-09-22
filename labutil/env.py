@@ -1,0 +1,115 @@
+import os
+import sys
+import shutil
+
+from packaging.version import Version
+from .utils import err, echo, run_cmd, cmd_output
+
+
+PYPROJECT_TEMPLATE = """
+[project]
+name = "{0}"
+version = "1.0"
+requires-python = ">={1}"
+dependencies = [
+    {2}
+]
+
+[dependency-groups]
+dev = [
+    {3}
+]
+
+[tool.uv]
+preview-features = ["centralized-project-envs"]
+"""
+
+
+def pipenv_active(taskdir):
+    if not shutil.which("pipenv"):
+        return False
+    internal_venv = os.path.join(taskdir, '.venv')
+    if os.path.exists(internal_venv):
+        return False
+    orig_path = os.getcwd()
+    os.chdir(taskdir)
+    out = cmd_output(['pipenv', '--venv'])
+    os.chdir(orig_path)
+    return out[:13] != "No virtualenv"
+
+
+def parse_pipfile(path):
+    contents = {}
+    with open(path, 'r', encoding='utf-8') as f:
+        section = None
+        for l in f.read().splitlines():
+            if not len(l):
+                continue
+            elif l[0] == "[" and l[-1] == "]":
+                section = l.strip("[]")
+                contents[section] = {}
+            elif section:
+                field, value = l.split("=", 1)
+                field = field.strip()
+                contents[section][field] = value.strip()
+    for section in ['packages', 'requires']:
+        if not section in contents.keys():
+            contents[section] = {}
+    return contents
+
+
+def convert_pipfile(taskname, taskdir):
+    path = os.path.join(taskdir, "Pipfile")
+    info = parse_pipfile(path)
+    # Get minimum Python version (default to Python 3.11 if not set)
+    min_python = "3.11"
+    max_python = "<3.15"
+    if 'requires' in info.keys():
+        if 'python_version' in info['requires'].keys():
+            min_python = info['requires']['python_version'].strip('"')
+    # Gather names of required packages
+    old_klibs = False
+    packages = []
+    git_repos = []
+    for package, version in info['packages'].items():
+        # Packages without pinned versions
+        if version == '"*"':
+            packages.append(package)
+        # Non-PyPI packages installed from URLs
+        elif version[:5] == "{file":
+            url = version.split(" = ")[-1].strip('"}')
+            packages.append("{} @ {}".format(package, url))
+            if package == "klibs":
+                if Version(url.split("/")[-2]) < Version("0.7.8b1"):
+                    old_klibs = True
+        # Packages installed from git repositories
+        elif version[:4] == "{git":
+            packages.append(package)
+            git_repos.append(package + " = " + version.replace("ref =", "rev ="))
+            if package == "klibs":
+                old_klibs = True
+        # Packages with version restrictions
+        else:
+            packages.append(package + version.strip('"'))
+    # Gather names of dev packages
+    dev_packages = []
+    for package, version in info['dev-packages'].items():
+        s = package if version == '"*"' else package + version.strip('"')
+        dev_packages.append(s)
+    # If using older klibs, install old setuptools and set max Python version
+    if old_klibs:
+        if "setuptools==79.0.1" not in packages:
+            packages.append("setuptools==79.0.1")
+        max_python = "<3.12"
+    # Generate and save pyproject.toml
+    outfile = os.path.join(taskdir, "pyproject.toml")
+    python_ver = "{},{}".format(min_python, max_python)
+    pkg_str = ",\n    ".join(['"{}"'.format(p) for p in packages])
+    dev_str = ",\n    ".join(['"{}"'.format(p) for p in dev_packages])
+    contents = PYPROJECT_TEMPLATE.format(taskname, python_ver, pkg_str, dev_str)
+    if len(git_repos):
+        contents += "\n[tool.uv.sources]\n"
+        contents += "\n".join(git_repos)
+        contents += "\n"
+    with open(outfile, "w", encoding='utf-8') as out:
+        out.write(contents)
